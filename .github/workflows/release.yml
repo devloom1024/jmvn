@@ -1,0 +1,40 @@
+name: release
+
+on:
+  push:
+    tags:
+      - "v*"
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+
+      - name: Test
+        run: go test ./...
+
+      - name: Build Windows AMD64
+        run: GOOS=windows GOARCH=amd64 go build -ldflags "-s -w -X main.version=${GITHUB_REF_NAME#v}" -o bin/jmvn-windows-amd64.exe .
+
+      - name: Build Darwin AMD64
+        run: GOOS=darwin GOARCH=amd64 go build -ldflags "-s -w -X main.version=${GITHUB_REF_NAME#v}" -o bin/jmvn-darwin-amd64 .
+
+      - name: Build Darwin ARM64
+        run: GOOS=darwin GOARCH=arm64 go build -ldflags "-s -w -X main.version=${GITHUB_REF_NAME#v}" -o bin/jmvn-darwin-arm64 .
+
+      - name: Build Linux AMD64
+        run: GOOS=linux GOARCH=amd64 go build -ldflags "-s -w -X main.version=${GITHUB_REF_NAME#v}" -o bin/jmvn-linux-amd64 .
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: jmvn-binaries
+          path: bin/*
