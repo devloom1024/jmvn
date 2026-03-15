@@ -19,21 +19,21 @@ func newListCmd() *cobra.Command {
 				return err
 			}
 
-			if _, err := fmt.Fprintln(cmd.OutOrStdout(), "已注册的 JDK:"); err != nil {
+			if _, err := fmt.Fprintln(cmd.OutOrStdout(), styledHeader("已注册的 JDK:")); err != nil {
 				return err
 			}
 			for _, version := range sortedKeys(globalCfg.JDKs) {
-				line := fmt.Sprintf("  %s  %s  %s", version, globalCfg.JDKs[version], existsMarker(globalCfg.JDKs[version]))
+				line := fmt.Sprintf("  %s  %s  %s", styledLabel(version), globalCfg.JDKs[version], styledMarker(pathExists(globalCfg.JDKs[version])))
 				if _, err := fmt.Fprintln(cmd.OutOrStdout(), line); err != nil {
 					return err
 				}
 			}
 
-			if _, err := fmt.Fprintln(cmd.OutOrStdout(), "\n已注册的 Maven:"); err != nil {
+			if _, err := fmt.Fprintln(cmd.OutOrStdout(), "\n"+styledHeader("已注册的 Maven:")); err != nil {
 				return err
 			}
 			for _, version := range sortedKeys(globalCfg.Mavens) {
-				line := fmt.Sprintf("  %s  %s  %s", version, globalCfg.Mavens[version], existsMarker(globalCfg.Mavens[version]))
+				line := fmt.Sprintf("  %s  %s  %s", styledLabel(version), globalCfg.Mavens[version], styledMarker(pathExists(globalCfg.Mavens[version])))
 				if _, err := fmt.Fprintln(cmd.OutOrStdout(), line); err != nil {
 					return err
 				}
@@ -52,9 +52,7 @@ func sortedKeys(values map[string]string) []string {
 	return keys
 }
 
-func existsMarker(path string) string {
-	if _, err := os.Stat(path); err == nil {
-		return "✓"
-	}
-	return "✗"
+func pathExists(path string) bool {
+	_, err := os.Stat(path)
+	return err == nil
 }

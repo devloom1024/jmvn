@@ -2,6 +2,7 @@ package config
 
 import (
 	"path/filepath"
+	"runtime"
 	"testing"
 
 	"jmvn/internal/cli"
@@ -38,7 +39,7 @@ func TestResolve_PrefersCLIThenProjectThenGlobal(t *testing.T) {
 	if err != nil {
 		t.Fatalf("expected no error, got %v", err)
 	}
-	if resolved.JavaCmd != filepath.Clean(`/jdks/jdk-17/bin/java`) {
+	if resolved.JavaCmd != expectedJavaCmd(`/jdks/jdk-17`) {
 		t.Fatalf("unexpected java command: %q", resolved.JavaCmd)
 	}
 	if resolved.JavaCmdSource != "cli" {
@@ -72,7 +73,7 @@ func TestResolve_FallsBackToEnvWhenConfigMissing(t *testing.T) {
 	if err != nil {
 		t.Fatalf("expected no error, got %v", err)
 	}
-	if resolved.JavaCmd != filepath.Clean(`/env/jdk-21/bin/java`) {
+	if resolved.JavaCmd != expectedJavaCmd(`/env/jdk-21`) {
 		t.Fatalf("unexpected java command: %q", resolved.JavaCmd)
 	}
 	if resolved.JavaCmdSource != "env" {
@@ -84,4 +85,12 @@ func TestResolve_FallsBackToEnvWhenConfigMissing(t *testing.T) {
 	if resolved.MavenHomeSource != "env" {
 		t.Fatalf("expected maven source env, got %q", resolved.MavenHomeSource)
 	}
+}
+
+func expectedJavaCmd(jdkHome string) string {
+	javaName := "java"
+	if runtime.GOOS == "windows" {
+		javaName = "java.exe"
+	}
+	return filepath.Clean(filepath.Join(jdkHome, "bin", javaName))
 }

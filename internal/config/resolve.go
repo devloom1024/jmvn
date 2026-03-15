@@ -21,10 +21,10 @@ func Resolve(cliOpts cli.Options, projectCfg ProjectConfig, globalCfg GlobalConf
 		if !ok {
 			return ResolvedConfig{}, fmt.Errorf("jdk %s is not registered", jdkVersion)
 		}
-		resolved.JavaCmd = filepath.Clean(filepath.Join(jdkHome, "bin", "java"))
+		resolved.JavaCmd = util.ResolveJavaBinary(jdkHome)
 		resolved.JavaCmdSource = jdkSource
 	} else if javaHome := firstEnv(env, "JAVA_HOME"); javaHome != "" {
-		resolved.JavaCmd = filepath.Clean(filepath.Join(javaHome, "bin", "java"))
+		resolved.JavaCmd = util.ResolveJavaBinary(javaHome)
 		resolved.JavaCmdSource = "env"
 	}
 

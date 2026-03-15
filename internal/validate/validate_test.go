@@ -3,6 +3,7 @@ package validate_test
 import (
 	"os"
 	"path/filepath"
+	"runtime"
 	"strings"
 	"testing"
 
@@ -22,7 +23,7 @@ func TestResolvedConfig_ReturnsHelpfulErrorForMissingJava(t *testing.T) {
 
 func TestResolvedConfig_AcceptsMissingOptionalPaths(t *testing.T) {
 	tempDir := t.TempDir()
-	javaPath := filepath.Join(tempDir, "bin", "java")
+	javaPath := filepath.Join(tempDir, "bin", javaBinaryName())
 	mavenHome := filepath.Join(tempDir, "maven")
 	bootDir := filepath.Join(mavenHome, "boot")
 	binDir := filepath.Join(mavenHome, "bin")
@@ -54,4 +55,11 @@ func mustWriteFile(t *testing.T, path string, content string) {
 	if err := os.WriteFile(path, []byte(content), 0o644); err != nil {
 		t.Fatalf("write %s: %v", path, err)
 	}
+}
+
+func javaBinaryName() string {
+	if runtime.GOOS == "windows" {
+		return "java.exe"
+	}
+	return "java"
 }

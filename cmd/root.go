@@ -200,16 +200,13 @@ func renderCommand(cmd *exec.Cmd) string {
 func printVerboseResolution(cmd *cobra.Command, resolved config.ResolvedConfig) error {
 	_, err := fmt.Fprintf(
 		cmd.OutOrStdout(),
-		"jmvn resolution\nJDK        %s [%s]\nMaven      %s [%s]\nSettings   %s [%s]\nLocal Repo %s [%s]\nProject Dir %s\n",
-		resolved.JavaCmd,
-		bracketSource(resolved.JavaCmdSource),
-		resolved.MavenHome,
-		bracketSource(resolved.MavenHomeSource),
-		resolved.Settings,
-		bracketSource(resolved.SettingsSource),
-		resolved.LocalRepo,
-		bracketSource(resolved.LocalRepoSource),
-		resolved.ProjectDir,
+		"%s\n%s %s [%s]\n%s %s [%s]\n%s %s [%s]\n%s %s [%s]\n%s %s\n",
+		styledHeader("jmvn resolution"),
+		styledLabel("JDK       "), resolved.JavaCmd, bracketSource(resolved.JavaCmdSource),
+		styledLabel("Maven     "), resolved.MavenHome, bracketSource(resolved.MavenHomeSource),
+		styledLabel("Settings  "), resolved.Settings, bracketSource(resolved.SettingsSource),
+		styledLabel("Local Repo"), resolved.LocalRepo, bracketSource(resolved.LocalRepoSource),
+		styledLabel("Project Dir"), resolved.ProjectDir,
 	)
 	return err
 }

@@ -34,29 +34,23 @@ func newInfoCmd() *cobra.Command {
 			resolved.ProjectDir = cwd
 			globalPath := filepath.Join(deps.userHomeDir(), ".jmvn", "config.toml")
 			projectPath := filepath.Join(cwd, ".jmvn.toml")
-			_, err = fmt.Fprintf(cmd.OutOrStdout(), "jmvn 配置解析\nJDK        %s [%s]\nMaven      %s [%s]\nSettings   %s [%s]\nLocal Repo %s [%s]\nProject Dir %s\nConfig Files:\n  Global:  %s  %s\n  Project: %s  %s\n",
-				resolved.JavaCmd,
-				resolved.JavaCmdSource,
-				resolved.MavenHome,
-				resolved.MavenHomeSource,
-				resolved.Settings,
-				resolved.SettingsSource,
-				resolved.LocalRepo,
-				resolved.LocalRepoSource,
-				resolved.ProjectDir,
-				globalPath,
-				fileStatus(globalPath),
-				projectPath,
-				fileStatus(projectPath),
+			_, err = fmt.Fprintf(cmd.OutOrStdout(), "%s\n%s %s [%s]\n%s %s [%s]\n%s %s [%s]\n%s %s [%s]\n%s %s\n%s\n  %s %s  %s\n  %s %s  %s\n",
+				styledHeader("jmvn 配置解析"),
+				styledLabel("JDK       "), resolved.JavaCmd, resolved.JavaCmdSource,
+				styledLabel("Maven     "), resolved.MavenHome, resolved.MavenHomeSource,
+				styledLabel("Settings  "), resolved.Settings, resolved.SettingsSource,
+				styledLabel("Local Repo"), resolved.LocalRepo, resolved.LocalRepoSource,
+				styledLabel("Project Dir"), resolved.ProjectDir,
+				styledHeader("Config Files:"),
+				styledLabel("Global: "), globalPath, styledStatus(fileExists(globalPath)),
+				styledLabel("Project:"), projectPath, styledStatus(fileExists(projectPath)),
 			)
 			return err
 		},
 	}
 }
 
-func fileStatus(path string) string {
-	if _, err := os.Stat(path); err == nil {
-		return "found"
-	}
-	return "missing"
+func fileExists(path string) bool {
+	_, err := os.Stat(path)
+	return err == nil
 }

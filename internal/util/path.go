@@ -3,6 +3,7 @@ package util
 import (
 	"os"
 	"path/filepath"
+	"runtime"
 	"strings"
 )
 
@@ -30,4 +31,12 @@ func ResolvePath(raw string, baseDir string) string {
 		return filepath.Clean(resolved)
 	}
 	return filepath.Clean(filepath.Join(baseDir, resolved))
+}
+
+func ResolveJavaBinary(jdkHome string) string {
+	javaName := "java"
+	if runtime.GOOS == "windows" {
+		javaName = "java.exe"
+	}
+	return filepath.Clean(filepath.Join(jdkHome, "bin", javaName))
 }
