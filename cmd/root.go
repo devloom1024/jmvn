@@ -97,7 +97,7 @@ func NewRootCmd() *cobra.Command {
 		},
 	}
 
-	flags := cmd.Flags()
+	flags := cmd.PersistentFlags()
 	flags.StringVarP(&state.options.JDK, "jdk", "j", "", "Override JDK version")
 	flags.StringVarP(&state.options.Maven, "maven", "m", "", "Override Maven version")
 	flags.StringVarP(&state.options.Settings, "settings", "s", "", "Override settings.xml path")
