@@ -17,6 +17,11 @@ func newInitCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "init",
 		Short: "Initialize jmvn configuration",
+		Long:  "Create a project-local .jmvn.toml or a global ~/.jmvn/config.toml file.\nUse --global to initialize the shared toolchain registry.",
+		Example: strings.Join([]string{
+			"  jmvn init",
+			"  jmvn init --global",
+		}, "\n"),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			answers, err := deps.promptInit(global)
 			if err != nil {

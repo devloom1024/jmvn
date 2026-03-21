@@ -65,6 +65,12 @@ local_repo = "./.m2/repository"
 
 ## 常见命令
 
+查看帮助：
+
+```bash
+jmvn --help
+```
+
 查看版本：
 
 ```bash
@@ -99,6 +105,12 @@ jmvn init --global
 
 ```bash
 jmvn --dry-run clean test
+```
+
+使用指定 JDK 查看解析结果：
+
+```bash
+jmvn info --jdk 8
 ```
 
 ## 工作原理

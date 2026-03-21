@@ -85,6 +85,14 @@ func NewRootCmd() *cobra.Command {
 	state := &executionState{}
 	cmd := &cobra.Command{
 		Use:           "jmvn [maven-args...]",
+		Short:         "Resolve JDK and Maven, then launch Maven with the selected Java runtime",
+		Long: `jmvn merges CLI flags, project config, global config and environment,
+then resolves the effective JDK, Maven, settings.xml and local repository.`,
+		Example: strings.Join([]string{
+			"  jmvn --dry-run clean test",
+			"  jmvn info --jdk 8",
+			"  jmvn init --global",
+		}, "\n"),
 		SilenceUsage:  true,
 		SilenceErrors: true,
 		Args: func(cmd *cobra.Command, args []string) error {
