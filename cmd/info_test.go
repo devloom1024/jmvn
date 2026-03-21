@@ -11,6 +11,35 @@ import (
 	"jmvn/internal/config"
 )
 
+func TestInfoCommand_UsesDetectedJDKWhenProjectConfigMissing(t *testing.T) {
+	original := deps
+	defer func() { deps = original }()
+
+	projectDir := t.TempDir()
+	capturedProjectJDK := ""
+	deps = commandDeps{
+		getwd:            func() (string, error) { return projectDir, nil },
+		userHomeDir:      func() string { return `D:/home` },
+		loadGlobal:       func(string) (config.GlobalConfig, error) { return config.GlobalConfig{}, nil },
+		loadProject:      func(string) (config.ProjectConfig, error) { return config.ProjectConfig{}, nil },
+		detectJDKVersion: func(string) string { return "8" },
+		resolve: func(cliOpts cli.Options, projectCfg config.ProjectConfig, globalCfg config.GlobalConfig, env map[string]string, projectDir string) (config.ResolvedConfig, error) {
+			capturedProjectJDK = projectCfg.JDK
+			return config.ResolvedConfig{JavaCmd: `java`, MavenHome: `maven`, ProjectDir: projectDir}, nil
+		},
+		lookupEnv:  func() map[string]string { return map[string]string{} },
+		promptInit: func(bool) (promptAnswers, error) { return promptAnswers{}, nil },
+	}
+
+	cmd := NewRootCmd()
+	cmd.SetArgs([]string{"info"})
+	_ = cmd.Execute()
+
+	if capturedProjectJDK != "8" {
+		t.Fatalf("expected info to reuse detected JDK, got %q", capturedProjectJDK)
+	}
+}
+
 func TestInfoCommand_PrintsResolvedConfigSources(t *testing.T) {
 	original := deps
 	defer func() { deps = original }()
