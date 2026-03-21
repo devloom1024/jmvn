@@ -43,6 +43,9 @@ func writeProjectConfig(answers promptAnswers) error {
 		return err
 	}
 	path := filepath.Join(cwd, ".jmvn.toml")
+	if _, err := os.Stat(path); err == nil {
+		return fmt.Errorf("configuration already exists: %s", path)
+	}
 	content := config.RenderProjectConfig(answers.JDK, answers.Maven, answers.Settings, answers.LocalRepo)
 	return os.WriteFile(path, []byte(content), 0o644)
 }
@@ -54,6 +57,9 @@ func writeGlobalConfig(answers promptAnswers) error {
 		return err
 	}
 	path := filepath.Join(configDir, "config.toml")
+	if _, err := os.Stat(path); err == nil {
+		return fmt.Errorf("configuration already exists: %s", path)
+	}
 	content := config.RenderGlobalConfig(answers.JDK, answers.JDKHome, answers.Maven, answers.MavenHome, answers.Settings, answers.LocalRepo)
 	return os.WriteFile(path, []byte(content), 0o644)
 }

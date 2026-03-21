@@ -7,6 +7,46 @@ import (
 	"testing"
 )
 
+func TestInitCommand_ProjectRefusesToOverwriteExistingConfig(t *testing.T) {
+	projectDir := t.TempDir()
+	_ = os.WriteFile(filepath.Join(projectDir, ".jmvn.toml"), []byte("jdk = \"17\"\n"), 0o644)
+
+	original := deps
+	defer func() { deps = original }()
+	deps = commandDeps{
+		getwd:      func() (string, error) { return projectDir, nil },
+		promptInit: func(bool) (promptAnswers, error) { return promptAnswers{}, nil },
+	}
+
+	cmd := NewRootCmd()
+	cmd.SetArgs([]string{"init"})
+	err := cmd.Execute()
+	if err == nil || !strings.Contains(err.Error(), "already exists") {
+		t.Fatalf("expected overwrite protection, got %v", err)
+	}
+}
+
+func TestInitCommand_GlobalRefusesToOverwriteExistingConfig(t *testing.T) {
+	homeDir := t.TempDir()
+	configDir := filepath.Join(homeDir, ".jmvn")
+	_ = os.MkdirAll(configDir, 0o755)
+	_ = os.WriteFile(filepath.Join(configDir, "config.toml"), []byte("[defaults]\n"), 0o644)
+
+	original := deps
+	defer func() { deps = original }()
+	deps = commandDeps{
+		userHomeDir: func() string { return homeDir },
+		promptInit:  func(bool) (promptAnswers, error) { return promptAnswers{}, nil },
+	}
+
+	cmd := NewRootCmd()
+	cmd.SetArgs([]string{"init", "--global"})
+	err := cmd.Execute()
+	if err == nil || !strings.Contains(err.Error(), "already exists") {
+		t.Fatalf("expected overwrite protection, got %v", err)
+	}
+}
+
 func TestInitCommand_GlobalWritesRegisteredDefaultJDK(t *testing.T) {
 	original := deps
 	defer func() { deps = original }()
