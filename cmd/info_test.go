@@ -40,6 +40,40 @@ func TestInfoCommand_UsesDetectedJDKWhenProjectConfigMissing(t *testing.T) {
 	}
 }
 
+func TestInfoCommand_PrintsDetectedSourceWhenProjectConfigMissing(t *testing.T) {
+	original := deps
+	defer func() { deps = original }()
+
+	projectDir := t.TempDir()
+	deps = commandDeps{
+		getwd:            func() (string, error) { return projectDir, nil },
+		userHomeDir:      func() string { return `D:/home` },
+		loadGlobal:       func(string) (config.GlobalConfig, error) { return config.GlobalConfig{}, nil },
+		loadProject:      func(string) (config.ProjectConfig, error) { return config.ProjectConfig{}, nil },
+		detectJDKVersion: func(string) string { return "8" },
+		resolve: func(cliOpts cli.Options, projectCfg config.ProjectConfig, globalCfg config.GlobalConfig, env map[string]string, projectDir string) (config.ResolvedConfig, error) {
+			return config.ResolvedConfig{
+				JavaCmd:       filepath.Clean(`D:/jdks/jdk-8/bin/java`),
+				MavenHome:     filepath.Clean(`D:/mavens/apache-maven-3.9.6`),
+				JavaCmdSource: "project",
+			}, nil
+		},
+		lookupEnv:  func() map[string]string { return map[string]string{} },
+		promptInit: func(bool) (promptAnswers, error) { return promptAnswers{}, nil },
+	}
+
+	cmd := NewRootCmd()
+	var stdout bytes.Buffer
+	cmd.SetOut(&stdout)
+	cmd.SetErr(&stdout)
+	cmd.SetArgs([]string{"info"})
+
+	_ = cmd.Execute()
+	if !strings.Contains(stdout.String(), "[project]") {
+		t.Fatalf("expected detected project source in info output, got %q", stdout.String())
+	}
+}
+
 func TestInfoCommand_PrintsResolvedConfigSources(t *testing.T) {
 	original := deps
 	defer func() { deps = original }()

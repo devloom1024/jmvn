@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
-	"path/filepath"
 	"strings"
 
 	"jmvn/internal/cli"
@@ -115,26 +114,10 @@ func NewRootCmd() *cobra.Command {
 }
 
 func runRootCommand(cmd *cobra.Command, state *executionState) error {
-	cwd, err := deps.getwd()
+	_, resolved, err := resolveCommandConfig(state)
 	if err != nil {
 		return err
 	}
-	globalCfg, err := deps.loadGlobal(filepath.Join(deps.userHomeDir(), ".jmvn", "config.toml"))
-	if err != nil {
-		return err
-	}
-	projectCfg, err := deps.loadProject(filepath.Join(cwd, ".jmvn.toml"))
-	if err != nil {
-		return err
-	}
-	if projectCfg.JDK == "" && state.options.JDK == "" {
-		projectCfg.JDK = deps.detectJDKVersion(cwd)
-	}
-	resolved, err := deps.resolve(state.options, projectCfg, globalCfg, deps.lookupEnv(), cwd)
-	if err != nil {
-		return err
-	}
-	resolved.ProjectDir = cwd
 	if err := deps.validateResolved(resolved); err != nil {
 		return err
 	}
