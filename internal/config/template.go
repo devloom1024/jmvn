@@ -25,7 +25,7 @@ func RenderProjectConfig(jdk string, maven string, settings string, localRepo st
 	return strings.Join(lines, "\n") + "\n"
 }
 
-func RenderGlobalConfig(jdk string, mavenHome string, settings string, localRepo string) string {
+func RenderGlobalConfig(jdk string, jdkHome string, maven string, mavenHome string, settings string, localRepo string) string {
 	lines := []string{"[defaults]"}
 	if jdk != "" {
 		lines = append(lines, fmt.Sprintf("jdk = %q", jdk))
@@ -39,6 +39,13 @@ func RenderGlobalConfig(jdk string, mavenHome string, settings string, localRepo
 	if localRepo != "" {
 		lines = append(lines, fmt.Sprintf("local_repo = %q", localRepo))
 	}
-	lines = append(lines, "", "[jdks]", "", "[mavens]")
+	lines = append(lines, "", "[jdks]")
+	if jdk != "" && jdkHome != "" {
+		lines = append(lines, fmt.Sprintf("%q = %q", jdk, jdkHome))
+	}
+	lines = append(lines, "", "[mavens]")
+	if maven != "" && mavenHome != "" {
+		lines = append(lines, fmt.Sprintf("%q = %q", maven, mavenHome))
+	}
 	return strings.Join(lines, "\n") + "\n"
 }

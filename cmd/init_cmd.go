@@ -54,7 +54,7 @@ func writeGlobalConfig(answers promptAnswers) error {
 		return err
 	}
 	path := filepath.Join(configDir, "config.toml")
-	content := config.RenderGlobalConfig(answers.JDK, answers.MavenHome, answers.Settings, answers.LocalRepo)
+	content := config.RenderGlobalConfig(answers.JDK, answers.JDKHome, answers.Maven, answers.MavenHome, answers.Settings, answers.LocalRepo)
 	return os.WriteFile(path, []byte(content), 0o644)
 }
 
@@ -77,6 +77,12 @@ func defaultPromptInit(global bool) (promptAnswers, error) {
 		return promptAnswers{}, err
 	}
 	if global {
+		if answers.JDKHome, err = ask("JDK home for that version: "); err != nil {
+			return promptAnswers{}, err
+		}
+		if answers.Maven, err = ask("Default Maven version: "); err != nil {
+			return promptAnswers{}, err
+		}
 		if answers.MavenHome, err = ask("Default Maven home: "); err != nil {
 			return promptAnswers{}, err
 		}

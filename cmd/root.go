@@ -22,6 +22,7 @@ type executionState struct {
 
 type promptAnswers struct {
 	JDK       string
+	JDKHome   string
 	Maven     string
 	Settings  string
 	LocalRepo string

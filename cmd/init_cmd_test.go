@@ -7,6 +7,39 @@ import (
 	"testing"
 )
 
+func TestInitCommand_GlobalWritesRegisteredDefaultJDK(t *testing.T) {
+	original := deps
+	defer func() { deps = original }()
+
+	homeDir := t.TempDir()
+	deps = commandDeps{
+		userHomeDir: func() string { return homeDir },
+		promptInit: func(global bool) (promptAnswers, error) {
+			return promptAnswers{
+				JDK:       "17",
+				JDKHome:   `D:/jdks/jdk-17`,
+				Maven:     "3.9",
+				MavenHome: `D:/mavens/apache-maven-3.9.6`,
+				Settings:  `D:/users/demo/.m2/settings.xml`,
+				LocalRepo: `D:/users/demo/.m2/repository`,
+			}, nil
+		},
+	}
+
+	cmd := NewRootCmd()
+	cmd.SetArgs([]string{"init", "--global"})
+	_ = cmd.Execute()
+
+	content, _ := os.ReadFile(filepath.Join(homeDir, ".jmvn", "config.toml"))
+	text := string(content)
+	if !strings.Contains(text, `"17" = "D:/jdks/jdk-17"`) {
+		t.Fatalf("expected registered default JDK mapping, got %q", text)
+	}
+	if !strings.Contains(text, `"3.9" = "D:/mavens/apache-maven-3.9.6"`) {
+		t.Fatalf("expected registered default Maven mapping, got %q", text)
+	}
+}
+
 func TestInitCommand_WritesProjectConfigTemplate(t *testing.T) {
 	original := deps
 	defer func() { deps = original }()
