@@ -85,8 +85,8 @@ var deps = commandDeps{
 func NewRootCmd() *cobra.Command {
 	state := &executionState{}
 	cmd := &cobra.Command{
-		Use:           "jmvn [maven-args...]",
-		Short:         "Resolve JDK and Maven, then launch Maven with the selected Java runtime",
+		Use:   "jmvn [maven-args...]",
+		Short: "Resolve JDK and Maven, then launch Maven with the selected Java runtime",
 		Long: `jmvn merges CLI flags, project config, global config and environment,
 then resolves the effective JDK, Maven, settings.xml and local repository.`,
 		Example: strings.Join([]string{
@@ -107,6 +107,8 @@ then resolves the effective JDK, Maven, settings.xml and local repository.`,
 	}
 
 	flags := cmd.PersistentFlags()
+	flags.SetInterspersed(false)
+	cmd.Flags().SetInterspersed(false)
 	flags.StringVarP(&state.options.JDK, "jdk", "j", "", "Override JDK version")
 	flags.StringVarP(&state.options.Maven, "maven", "m", "", "Override Maven version")
 	flags.StringVarP(&state.options.Settings, "settings", "s", "", "Override settings.xml path")
