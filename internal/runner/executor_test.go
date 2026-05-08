@@ -3,11 +3,17 @@ package runner
 import (
 	"errors"
 	"os/exec"
+	"runtime"
 	"testing"
 )
 
 func TestExec_ReturnsExitCodeErrorForFailedCommand(t *testing.T) {
-	cmd := exec.Command("cmd", "/c", "exit", "7")
+	var cmd *exec.Cmd
+	if runtime.GOOS == "windows" {
+		cmd = exec.Command("cmd", "/c", "exit", "7")
+	} else {
+		cmd = exec.Command("sh", "-c", "exit 7")
+	}
 	err := Exec(cmd)
 	if err == nil {
 		t.Fatal("expected error")
