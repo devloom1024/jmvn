@@ -4,6 +4,14 @@ on:
   push:
     tags:
       - "v*"
+  release:
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Version tag (e.g. v0.2.0)"
+        required: true
+        type: string
 
 jobs:
   test:
@@ -39,8 +47,8 @@ jobs:
 
       - name: Build
         env:
-          VERSION: ${{ github.ref_name }}
-          LDFLAGS: -s -w -X main.version=${{ github.ref_name }}
+          VERSION: ${{ github.event.inputs.version || github.ref_name }}
+          LDFLAGS: -s -w -X main.version=${{ github.event.inputs.version || github.ref_name }}
         run: |
           mkdir -p bin
 
@@ -74,10 +82,9 @@ jobs:
           name: jmvn-binaries
           path: bin
 
-      - name: Create GitHub Release
+      - name: Upload Release Assets
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          gh release create "${{ github.ref_name }}" bin/* \
-            --title "${{ github.ref_name }}" \
-            --generate-notes
+          VERSION="${{ github.event.inputs.version || github.ref_name }}"
+          gh release upload "$VERSION" bin/* --clobber
