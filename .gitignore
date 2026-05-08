@@ -1,1 +1,5 @@
 .idea
+/.worktrees/
+*.exe
+*.iml
+.gocache

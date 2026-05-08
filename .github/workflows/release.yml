@@ -1,0 +1,83 @@
+name: release
+
+on:
+  push:
+    tags:
+      - "v*"
+
+jobs:
+  test:
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+
+      - name: Test
+        run: go test ./...
+
+  build:
+    needs: test
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+
+      - name: Build
+        env:
+          VERSION: ${{ github.ref_name }}
+          LDFLAGS: -s -w -X main.version=${{ github.ref_name }}
+        run: |
+          mkdir -p bin
+
+          GOOS=linux   GOARCH=amd64 go build -ldflags "${LDFLAGS}" -o bin/jmvn-linux-amd64   .
+          GOOS=linux   GOARCH=arm64 go build -ldflags "${LDFLAGS}" -o bin/jmvn-linux-arm64   .
+          GOOS=darwin  GOARCH=amd64 go build -ldflags "${LDFLAGS}" -o bin/jmvn-darwin-amd64  .
+          GOOS=darwin  GOARCH=arm64 go build -ldflags "${LDFLAGS}" -o bin/jmvn-darwin-arm64  .
+          GOOS=windows GOARCH=amd64 go build -ldflags "${LDFLAGS}" -o bin/jmvn-windows-amd64.exe .
+          GOOS=windows GOARCH=arm64 go build -ldflags "${LDFLAGS}" -o bin/jmvn-windows-arm64.exe .
+
+      - name: Generate checksums
+        working-directory: bin
+        run: sha256sum * > checksums.txt
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: jmvn-binaries
+          path: bin/*
+
+  release:
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Download artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: jmvn-binaries
+          path: bin
+
+      - name: Create GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "${{ github.ref_name }}" bin/* \
+            --title "${{ github.ref_name }}" \
+            --generate-notes
