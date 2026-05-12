@@ -97,3 +97,42 @@ func TestDetectJDKVersion_FromMvnJdkConfig(t *testing.T) {
 		t.Fatalf("expected 21, got %q", got)
 	}
 }
+
+func TestDetectJDKVersion_ResolvePlaceholderFromProperties(t *testing.T) {
+	projectDir := t.TempDir()
+	pom := `<project><properties><java>17</java><java.version>${java}</java.version></properties></project>`
+	if err := os.WriteFile(filepath.Join(projectDir, "pom.xml"), []byte(pom), 0o644); err != nil {
+		t.Fatalf("write pom.xml: %v", err)
+	}
+
+	got := DetectJDKVersion(projectDir)
+	if got != "17" {
+		t.Fatalf("expected 17 from resolving ${java}, got %q", got)
+	}
+}
+
+func TestDetectJDKVersion_PlaceholderNotFoundSkips(t *testing.T) {
+	projectDir := t.TempDir()
+	pom := `<project><properties><java.version>${unknown}</java.version></properties></project>`
+	if err := os.WriteFile(filepath.Join(projectDir, "pom.xml"), []byte(pom), 0o644); err != nil {
+		t.Fatalf("write pom.xml: %v", err)
+	}
+
+	got := DetectJDKVersion(projectDir)
+	if got != "" {
+		t.Fatalf("expected empty when placeholder cannot be resolved, got %q", got)
+	}
+}
+
+func TestDetectJDKVersion_NormalPropertyStillWorks(t *testing.T) {
+	projectDir := t.TempDir()
+	pom := `<project><properties><foo>bar</foo><java.version>21</java.version></properties></project>`
+	if err := os.WriteFile(filepath.Join(projectDir, "pom.xml"), []byte(pom), 0o644); err != nil {
+		t.Fatalf("write pom.xml: %v", err)
+	}
+
+	got := DetectJDKVersion(projectDir)
+	if got != "21" {
+		t.Fatalf("expected 21 from normal property, got %q", got)
+	}
+}

@@ -14,9 +14,29 @@ type pomProject struct {
 }
 
 type pomProperties struct {
-	CompilerRelease string `xml:"maven.compiler.release"`
-	CompilerSource  string `xml:"maven.compiler.source"`
-	JavaVersion     string `xml:"java.version"`
+	Entries map[string]string
+}
+
+func (p *pomProperties) UnmarshalXML(d *xml.Decoder, start xml.StartElement) error {
+	p.Entries = make(map[string]string)
+	for {
+		tok, err := d.Token()
+		if err != nil {
+			return err
+		}
+		switch t := tok.(type) {
+		case xml.StartElement:
+			var val string
+			if err := d.DecodeElement(&val, &t); err != nil {
+				return err
+			}
+			p.Entries[t.Name.Local] = val
+		case xml.EndElement:
+			if t == start.End() {
+				return nil
+			}
+		}
+	}
 }
 
 type pomBuild struct {
@@ -65,27 +85,51 @@ func detectFromPom(projectDir string) string {
 	if err := xml.Unmarshal(content, &project); err != nil {
 		return ""
 	}
-	if project.Properties.CompilerRelease != "" {
-		return normalizeVersion(project.Properties.CompilerRelease)
+	props := project.Properties.Entries
+
+	if v := resolveProperty(props["maven.compiler.release"], props); v != "" {
+		return normalizeVersion(v)
 	}
-	if project.Properties.CompilerSource != "" {
-		return normalizeVersion(project.Properties.CompilerSource)
+	if v := resolveProperty(props["maven.compiler.source"], props); v != "" {
+		return normalizeVersion(v)
 	}
-	if project.Properties.JavaVersion != "" {
-		return normalizeVersion(project.Properties.JavaVersion)
+	if v := resolveProperty(props["java.version"], props); v != "" {
+		return normalizeVersion(v)
 	}
 	for _, plugin := range project.Build.Plugins {
 		if plugin.ArtifactID != "maven-compiler-plugin" {
 			continue
 		}
-		if plugin.Configuration.Release != "" {
-			return normalizeVersion(plugin.Configuration.Release)
+		if v := resolveProperty(plugin.Configuration.Release, props); v != "" {
+			return normalizeVersion(v)
 		}
-		if plugin.Configuration.Source != "" {
-			return normalizeVersion(plugin.Configuration.Source)
+		if v := resolveProperty(plugin.Configuration.Source, props); v != "" {
+			return normalizeVersion(v)
 		}
 	}
 	return ""
+}
+
+var placeholderRe = regexp.MustCompile(`^\$\{([^}]+)\}$`)
+
+func resolveProperty(value string, props map[string]string) string {
+	if value == "" {
+		return ""
+	}
+	matches := placeholderRe.FindStringSubmatch(value)
+	if matches == nil {
+		return value
+	}
+	key := matches[1]
+	resolved, ok := props[key]
+	if !ok {
+		return ""
+	}
+	// 简单循环引用保护：解析后的值如果仍是占位符，放弃解析
+	if placeholderRe.MatchString(resolved) {
+		return ""
+	}
+	return resolved
 }
 
 func detectFromMvnJdkConfig(projectDir string) string {
@@ -107,6 +151,10 @@ func detectFromMvnJdkConfig(projectDir string) string {
 
 func normalizeVersion(v string) string {
 	if v == "" {
+		return ""
+	}
+	// 安全网：防御性过滤未解析的占位符（正常流程已在 resolveProperty 中处理）
+	if strings.HasPrefix(v, "${") && strings.HasSuffix(v, "}") {
 		return ""
 	}
 	if strings.HasPrefix(v, "1.") {
