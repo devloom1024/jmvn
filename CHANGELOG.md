@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.2.1](https://github.com/devloom1024/jmvn/compare/v0.2.0...v0.2.1) (2026-05-12)
+
+
+### Bug Fixes
+
+* add checkout step to release job for gh CLI ([#7](https://github.com/devloom1024/jmvn/issues/7)) ([e385f5a](https://github.com/devloom1024/jmvn/commit/e385f5a5aa839d61a21bcdd903cea0ba249f7027))
+* resolve Maven property placeholders & refactor build scripts ([#8](https://github.com/devloom1024/jmvn/issues/8)) ([224fdb6](https://github.com/devloom1024/jmvn/commit/224fdb66ce616dd7e1a4f94ad01759cee4493021))
+* trigger release workflow on release published event ([#5](https://github.com/devloom1024/jmvn/issues/5)) ([7778d05](https://github.com/devloom1024/jmvn/commit/7778d05e7821f9b4fd240f633ecddafe34df5ff5))
+
 ## [0.2.0](https://github.com/devloom1024/jmvn/compare/v0.1.0...v0.2.0) (2026-05-08)
 
 
