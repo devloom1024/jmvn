@@ -1,4 +1,5 @@
 .idea
+.claude/
 /.worktrees/
 *.exe
 *.iml
