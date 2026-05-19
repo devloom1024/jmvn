@@ -6,11 +6,12 @@
 
 ## 当前能力
 
-- 支持根命令透传 Maven 参数
-- 支持 `--jdk`、`--maven`、`--settings`、`--local-repo`、`--dry-run`
+- 根命令透传 Maven 参数（等价于 `jmvn run`）
+- 显式 `jmvn run` 子命令
+- 支持 `--jdk`、`--maven`、`--settings`、`--local-repo`、`--dry-run`、`--verbose`
 - 支持项目级 `.jmvn.toml` 和全局 `~/.jmvn/config.toml`
 - 支持从 `.java-version` 和 `pom.xml` 检测项目 JDK
-- 支持 `version`、`list`、`info`、`init`
+- 支持 `version`、`list`、`info`、`init`、`run`
 
 ## 安装与构建
 
@@ -69,6 +70,13 @@ local_repo = "./.m2/repository"
 
 ```bash
 jmvn --help
+```
+
+运行 Maven（两种等价方式）：
+
+```bash
+jmvn clean install
+jmvn run clean install
 ```
 
 查看版本：
