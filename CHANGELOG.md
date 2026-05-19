@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.0](https://github.com/devloom1024/jmvn/compare/v0.2.1...v0.3.0) (2026-05-19)
+
+
+### Features
+
+* add explicit 'jmvn run' subcommand ([#9](https://github.com/devloom1024/jmvn/issues/9)) ([60811dd](https://github.com/devloom1024/jmvn/commit/60811dd8fc34cc9925373ba22b39e41e422b1ac2))
+
 ## [0.2.1](https://github.com/devloom1024/jmvn/compare/v0.2.0...v0.2.1) (2026-05-12)
 
 
