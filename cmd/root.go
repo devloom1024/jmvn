@@ -86,10 +86,16 @@ func NewRootCmd() *cobra.Command {
 	state := &executionState{}
 	cmd := &cobra.Command{
 		Use:   "jmvn [maven-args...]",
-		Short: "Resolve JDK and Maven, then launch Maven with the selected Java runtime",
+		Short: "Run Maven with the resolved JDK (shorthand for jmvn run)",
 		Long: `jmvn merges CLI flags, project config, global config and environment,
-then resolves the effective JDK, Maven, settings.xml and local repository.`,
+then resolves the effective JDK, Maven, settings.xml and local repository.
+
+The root command is a shorthand for 'jmvn run'. Both forms are equivalent:
+  jmvn clean install
+  jmvn run clean install`,
 		Example: strings.Join([]string{
+			"  jmvn clean install",
+			"  jmvn run --jdk 11 clean test",
 			"  jmvn --dry-run clean test",
 			"  jmvn info --jdk 8",
 			"  jmvn init --global",
@@ -116,6 +122,7 @@ then resolves the effective JDK, Maven, settings.xml and local repository.`,
 	flags.BoolVarP(&state.options.DryRun, "dry-run", "n", false, "Print the resolved Java command without executing it")
 	flags.BoolVarP(&state.options.Verbose, "verbose", "v", false, "Print verbose resolution output")
 
+	cmd.AddCommand(newRunCmd())
 	cmd.AddCommand(newVersionCmd())
 	cmd.AddCommand(newListCmd())
 	cmd.AddCommand(newInfoCmd())

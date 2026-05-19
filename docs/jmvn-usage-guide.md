@@ -126,7 +126,17 @@ local_repo = "./.m2/repository"
 
 ## 4. 命令参考
 
-### 4.1 根命令——运行 Maven
+### 4.1 根命令——运行 Maven（快捷方式）
+
+根命令是 `jmvn run` 的快捷方式，两种形式等价：
+
+```bash
+# 快捷方式
+jmvn clean install
+
+# 显式子命令（推荐用于脚本/CI）
+jmvn run clean install
+```
 
 ```bash
 # 基础用法：所有参数透传给 Maven
@@ -142,7 +152,19 @@ jmvn --settings ~/another-settings.xml package
 jmvn --local-repo /tmp/m2-repo verify
 ```
 
-### 4.2 预览命令（dry-run）
+### 4.2 run——显式运行 Maven
+
+```bash
+# 与根命令完全等价
+jmvn run clean install
+jmvn run --jdk 11 clean test
+jmvn run --dry-run package
+```
+jmvn --settings ~/another-settings.xml package
+jmvn --local-repo /tmp/m2-repo verify
+```
+
+### 4.3 预览命令（dry-run）
 
 ```bash
 # 仅打印最终要执行的 Java 命令，不实际运行
@@ -166,14 +188,14 @@ JMvn > [sudo] /path/to/jdk-17/bin/java \
 
 > **安全提示**：`--dry-run` 模式不会执行任何命令，且前缀为 `[sudo]` 仅代表"预览模式"，并非真正的 `sudo` 提权。
 
-### 4.3 version——查看版本
+### 4.4 version——查看版本
 
 ```bash
 jmvn version
 # 输出：jmvn v1.0.0 (go1.23.0, windows/amd64)
 ```
 
-### 4.4 list——查看已注册的工具链
+### 4.5 list——查看已注册的工具链
 
 ```bash
 jmvn list
@@ -195,7 +217,7 @@ jmvn list
 
 `✓` 表示路径存在且可访问，`✗` 表示路径不存在或不可访问。
 
-### 4.5 info——查看当前项目解析结果
+### 4.6 info——查看当前项目解析结果
 
 ```bash
 jmvn info
@@ -216,7 +238,7 @@ jmvn info
 
 括号中的 `(project)`/`(global)`/`(cli)`/`(env)` 表示该值的来源。
 
-### 4.6 init——交互式初始化
+### 4.7 init——交互式初始化
 
 ```bash
 # 初始化项目配置
@@ -227,10 +249,11 @@ jmvn init
 jmvn init --global
 ```
 
-### 4.7 帮助
+### 4.8 帮助
 
 ```bash
 jmvn --help
+jmvn run --help
 jmvn init --help
 ```
 
