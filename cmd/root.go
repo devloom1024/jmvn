@@ -132,6 +132,8 @@ The root command is a shorthand for 'jmvn run'. Both forms are equivalent:
 }
 
 func runRootCommand(cmd *cobra.Command, state *executionState) error {
+	stripLeadingMvnPrefix(&state.mavenArgs)
+
 	_, resolved, err := resolveCommandConfig(state)
 	if err != nil {
 		return err
@@ -217,4 +219,10 @@ func bracketSource(source string) string {
 		return ""
 	}
 	return source
+}
+
+func stripLeadingMvnPrefix(args *[]string) {
+	if len(*args) > 0 && ((*args)[0] == "mvn" || (*args)[0] == "mvnw") {
+		*args = (*args)[1:]
+	}
 }
