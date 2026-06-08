@@ -1,11 +1,15 @@
-## 变更类型
+## 变更类型（PR 标题前缀）
 
-- [ ] `feat` 新功能
-- [ ] `fix` Bug 修复
-- [ ] `docs` 文档
-- [ ] `refactor` 重构
-- [ ] `test` 测试
-- [ ] `chore` 工程配置
+> 标题请使用 conventional commit 格式：`type: 描述`。合并后会自动触发 release-please 发版。
+> `feat:` 和 `fix:` 会触发自动发版，其他类型仅在 CHANGELOG 中记录。
+
+- [ ] `feat:` 新功能（触发发版，minor bump）
+- [ ] `fix:` Bug 修复（触发发版，patch bump）
+- [ ] `feat!:` / `fix!:` 破坏性变更（触发发版，major bump）
+- [ ] `docs:` 文档
+- [ ] `refactor:` 重构
+- [ ] `test:` 测试
+- [ ] `chore:` 工程配置
 
 ## 变更说明
 
