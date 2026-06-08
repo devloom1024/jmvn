@@ -2,6 +2,15 @@
 
 ## [0.4.0](https://github.com/devloom1024/jmvn/compare/v0.3.0...v0.4.0) (2026-06-08)
 
+### ⚠ BREAKING CHANGES
+
+* CLI flags (--jdk, --dry-run, --verbose) replaced by environment variables (JMVN_JDK, etc.) and colon-prefix commands (:info, :dry-run, :init, :list, :version, :help). The `jmvn run` subcommand is removed; the root command is now the Maven entry point.
+
+### Features
+
+* redesign CLI with colon-prefix commands for transparent Maven passthrough ([d46857c](https://github.com/devloom1024/jmvn/commit/d46857cf01b633934ad53f0d35283a530e46856a))
+
+
 ### BREAKING CHANGES
 
 * 重构 CLI 设计：以 `:` 前缀区分 jmvn 命令，其余参数全透传 Maven
