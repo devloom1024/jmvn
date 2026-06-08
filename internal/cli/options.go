@@ -1,10 +1,5 @@
 package cli
 
-type Options struct {
-	JDK       string
-	Maven     string
-	Settings  string
-	LocalRepo string
-	DryRun    bool
-	Verbose   bool
-}
+// Options is kept empty as a placeholder. CLI overrides have been
+// moved to environment variables (JMVN_JDK, JMVN_MAVEN, etc.).
+type Options struct{}

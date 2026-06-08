@@ -4,38 +4,49 @@
 
 它不直接调用 `mvn` 脚本，而是像 IntelliJ IDEA 一样，直接使用目标 JDK 的 `java` 可执行文件启动 Maven launcher。
 
-## 当前能力
+## 设计原则
 
-- 根命令透传 Maven 参数（等价于 `jmvn run`）
-- 显式 `jmvn run` 子命令
-- 支持 `--jdk`、`--maven`、`--settings`、`--local-repo`、`--dry-run`、`--verbose`
-- 支持项目级 `.jmvn.toml` 和全局 `~/.jmvn/config.toml`
-- 支持从 `.java-version` 和 `pom.xml` 检测项目 JDK
-- 支持 `version`、`list`、`info`、`init`、`run`
+**`jmvn` 是 `mvn` 的透明替代品。** 所有不以 `:` 开头的参数都原样透传给 Maven，零学习成本：
+
+```bash
+# 直接替换 mvn，一模一样
+jmvn clean install
+jmvn -pl flight-ticket-bdos-business -am -Dtest=SysSwtichConfigServiceImplTest test
+jmvn -DskipTests package
+```
+
+以 `:` 开头的参数是 `jmvn` 的专属命令：
+
+```bash
+jmvn :init           # 初始化配置
+jmvn :init --global  # 初始化全局配置
+jmvn :info           # 查看当前解析的 JDK/Maven/settings
+jmvn :list           # 列出已注册的工具链
+jmvn :version        # jmvn 版本信息
+jmvn :dry-run [args] # 预览将要执行的命令，不实际运行
+jmvn :help           # 帮助信息
+```
 
 ## 安装与构建
 
-本地构建：
-
 ```bash
 make build
+make build-all   # 多平台
+make test        # 运行测试
 ```
 
-多平台构建：
+## 配置
 
-```bash
-make build-all
-```
+配置文件体系（从高到低优先级）：
 
-运行测试：
+| 优先级 | 来源 | 说明 |
+|--------|------|------|
+| 1 | `JMVN_*` 环境变量 | 一次性覆盖 |
+| 2 | `.jmvn.toml` | 项目级配置 |
+| 3 | `~/.jmvn/config.toml` | 全局工具链注册 + 默认配置 |
+| 4 | 自动检测 / `JAVA_HOME` | `.java-version` / `pom.xml` / 环境变量 |
 
-```bash
-make test
-```
-
-## 全局配置示例
-
-路径：`~/.jmvn/config.toml`
+### 全局配置 `~/.jmvn/config.toml`
 
 ```toml
 [defaults]
@@ -53,9 +64,7 @@ local_repo = "D:/users/demo/.m2/repository"
 "3.9" = "D:/mavens/apache-maven-3.9.6"
 ```
 
-## 项目配置示例
-
-路径：`.jmvn.toml`
+### 项目配置 `.jmvn.toml`
 
 ```toml
 jdk = "17"
@@ -64,66 +73,22 @@ settings = "./maven/settings.xml"
 local_repo = "./.m2/repository"
 ```
 
-## 常见命令
-
-查看帮助：
+### 环境变量覆盖
 
 ```bash
-jmvn --help
-```
+# 一次性用 JDK 21 执行（不改配置文件）
+JMVN_JDK=21 jmvn clean install
 
-运行 Maven（两种等价方式）：
+# 覆盖 settings / local-repo
+JMVN_SETTINGS=/path/to/settings.xml jmvn clean test
 
-```bash
-jmvn clean install
-jmvn run clean install
-```
-
-查看版本：
-
-```bash
-jmvn version
-```
-
-查看当前解析结果：
-
-```bash
-jmvn info
-```
-
-查看已注册工具链：
-
-```bash
-jmvn list
-```
-
-初始化项目配置：
-
-```bash
-jmvn init
-```
-
-初始化全局配置：
-
-```bash
-jmvn init --global
-```
-
-打印实际启动命令但不执行：
-
-```bash
-jmvn --dry-run clean test
-```
-
-使用指定 JDK 查看解析结果：
-
-```bash
-jmvn info --jdk 8
+# 直接指定 Maven 目录
+JMVN_MAVEN_HOME=/path/to/maven jmvn clean install
 ```
 
 ## 工作原理
 
-`jmvn` 会先合并 CLI 参数、项目配置、全局配置和环境变量，再解析出目标 JDK 与 Maven 安装目录，最后构造类似下面的 Java 启动命令：
+`jmvn` 会先合并环境变量、项目配置、全局配置和自动检测结果，再解析出目标 JDK 与 Maven 安装目录，最后构造类似下面的 Java 启动命令：
 
 ```bash
 /path/to/jdk/bin/java \
@@ -134,9 +99,3 @@ jmvn info --jdk 8
   org.codehaus.plexus.classworlds.launcher.Launcher \
   clean install
 ```
-
-## 当前限制
-
-- `init` 目前是最小可用交互实现
-- `pom.xml` 检测目前覆盖的是常见属性场景
-- `.mvn/jvm.config`、更完整的 Maven 4 兼容和发布细节仍在继续完善

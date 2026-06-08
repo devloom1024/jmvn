@@ -16,8 +16,8 @@ import (
 )
 
 type executionState struct {
-	options   cli.Options
 	mavenArgs []string
+	dryRun    bool
 }
 
 type promptAnswers struct {
@@ -35,7 +35,7 @@ type commandDeps struct {
 	loadGlobal       func(string) (config.GlobalConfig, error)
 	loadProject      func(string) (config.ProjectConfig, error)
 	detectJDKVersion func(string) string
-	resolve          func(cli.Options, config.ProjectConfig, config.GlobalConfig, map[string]string, string) (config.ResolvedConfig, error)
+	resolve          func(config.ProjectConfig, config.GlobalConfig, map[string]string, string) (config.ResolvedConfig, error)
 	validateResolved func(config.ResolvedConfig) error
 	buildCommand     func(config.ResolvedConfig, []string) (*exec.Cmd, error)
 	lookupEnv        func() map[string]string
@@ -66,7 +66,10 @@ var deps = commandDeps{
 	buildCommand:     runner.BuildCommand,
 	lookupEnv: func() map[string]string {
 		result := map[string]string{}
-		for _, key := range []string{"JAVA_HOME", "MAVEN_HOME", "M2_HOME"} {
+		for _, key := range []string{
+			"JAVA_HOME", "MAVEN_HOME", "M2_HOME",
+			"JMVN_JDK", "JMVN_MAVEN", "JMVN_MAVEN_HOME", "JMVN_SETTINGS", "JMVN_LOCAL_REPO",
+		} {
 			if value := os.Getenv(key); value != "" {
 				result[key] = value
 			}
@@ -86,55 +89,80 @@ func NewRootCmd() *cobra.Command {
 	state := &executionState{}
 	cmd := &cobra.Command{
 		Use:   "jmvn [maven-args...]",
-		Short: "Run Maven with the resolved JDK (shorthand for jmvn run)",
-		Long: `jmvn merges CLI flags, project config, global config and environment,
+		Short: "Run Maven with the resolved JDK",
+		Long: `jmvn merges project config, global config and environment,
 then resolves the effective JDK, Maven, settings.xml and local repository.
 
-The root command is a shorthand for 'jmvn run'. Both forms are equivalent:
+All arguments are passed directly to Maven unless the first argument
+starts with ":" — those are jmvn's own commands:
+
+  :init        Initialize project or global configuration
+  :info        Show resolved JDK / Maven / settings
+  :list        List registered JDK and Maven toolchains
+  :version     Print jmvn version
+  :dry-run     Show the resolved Java command without executing it
+  :help        Show this help
+
+Examples:
   jmvn clean install
-  jmvn run clean install`,
+  jmvn -pl module -am test
+  jmvn :info
+  jmvn :dry-run clean test
+  jmvn :init`,
 		Example: strings.Join([]string{
 			"  jmvn clean install",
-			"  jmvn run --jdk 11 clean test",
-			"  jmvn --dry-run clean test",
-			"  jmvn info --jdk 8",
-			"  jmvn init --global",
+			"  jmvn -pl flight-ticket-bdos-business -am test",
+			"  JMVN_JDK=17 jmvn clean test",
+			"  jmvn :info",
+			"  jmvn :dry-run clean test",
+			"  jmvn :init",
+			"  jmvn :init --global",
 		}, "\n"),
-		SilenceUsage:  true,
-		SilenceErrors: true,
-		Args: func(cmd *cobra.Command, args []string) error {
-			state.mavenArgs = append([]string(nil), args...)
-			return nil
-		},
+		DisableFlagParsing: true,
+		SilenceUsage:       true,
+		SilenceErrors:      true,
 		RunE: func(cmd *cobra.Command, args []string) error {
+			if len(args) > 0 && strings.HasPrefix(args[0], ":") {
+				return handleJmvnCommand(cmd, state, args)
+			}
 			state.mavenArgs = append([]string(nil), args...)
-			return runRootCommand(cmd, state)
+			state.dryRun = false
+			return runMaven(cmd, state)
 		},
 	}
 
-	flags := cmd.PersistentFlags()
-	flags.SetInterspersed(false)
-	cmd.Flags().SetInterspersed(false)
-	flags.StringVarP(&state.options.JDK, "jdk", "j", "", "Override JDK version")
-	flags.StringVarP(&state.options.Maven, "maven", "m", "", "Override Maven version")
-	flags.StringVarP(&state.options.Settings, "settings", "s", "", "Override settings.xml path")
-	flags.StringVarP(&state.options.LocalRepo, "local-repo", "r", "", "Override local Maven repository path")
-	flags.BoolVarP(&state.options.DryRun, "dry-run", "n", false, "Print the resolved Java command without executing it")
-	flags.BoolVarP(&state.options.Verbose, "verbose", "v", false, "Print verbose resolution output")
-
-	cmd.AddCommand(newRunCmd())
-	cmd.AddCommand(newVersionCmd())
-	cmd.AddCommand(newListCmd())
-	cmd.AddCommand(newInfoCmd())
-	cmd.AddCommand(newInitCmd())
 	cmd.SetContext(withExecutionState(cmd.Context(), state))
 	return cmd
 }
 
-func runRootCommand(cmd *cobra.Command, state *executionState) error {
+func handleJmvnCommand(cmd *cobra.Command, state *executionState, args []string) error {
+	command := args[0]
+	remaining := args[1:]
+
+	switch command {
+	case ":init":
+		return handleInit(cmd, remaining)
+	case ":info":
+		return handleInfo(cmd)
+	case ":list":
+		return handleList(cmd)
+	case ":version":
+		return handleVersion(cmd)
+	case ":dry-run":
+		state.mavenArgs = append([]string(nil), remaining...)
+		state.dryRun = true
+		return runMaven(cmd, state)
+	case ":help":
+		return cmd.Help()
+	default:
+		return fmt.Errorf("未知的 jmvn 命令: %s（可用: :init, :info, :list, :version, :dry-run, :help）", command)
+	}
+}
+
+func runMaven(cmd *cobra.Command, state *executionState) error {
 	stripLeadingMvnPrefix(&state.mavenArgs)
 
-	_, resolved, err := resolveCommandConfig(state)
+	_, resolved, err := resolveCommandConfig()
 	if err != nil {
 		return err
 	}
@@ -145,12 +173,7 @@ func runRootCommand(cmd *cobra.Command, state *executionState) error {
 	if err != nil {
 		return err
 	}
-	if state.options.Verbose {
-		if err := printVerboseResolution(cmd, resolved); err != nil {
-			return err
-		}
-	}
-	if state.options.DryRun {
+	if state.dryRun {
 		_, err = fmt.Fprintln(cmd.OutOrStdout(), renderCommand(command))
 		return err
 	}
@@ -165,7 +188,7 @@ func executeForTest(cmd *cobra.Command) (cli.Options, []string, error) {
 		loadGlobal:       func(string) (config.GlobalConfig, error) { return config.GlobalConfig{}, nil },
 		loadProject:      func(string) (config.ProjectConfig, error) { return config.ProjectConfig{}, nil },
 		detectJDKVersion: detect.DetectJDKVersion,
-		resolve: func(cli.Options, config.ProjectConfig, config.GlobalConfig, map[string]string, string) (config.ResolvedConfig, error) {
+		resolve: func(config.ProjectConfig, config.GlobalConfig, map[string]string, string) (config.ResolvedConfig, error) {
 			return config.ResolvedConfig{JavaCmd: `java`, MavenHome: `maven`, ProjectDir: `D:/test`}, nil
 		},
 		validateResolved: func(config.ResolvedConfig) error { return nil },
@@ -185,7 +208,7 @@ func executeForTest(cmd *cobra.Command) (cli.Options, []string, error) {
 	if state == nil {
 		return cli.Options{}, nil, err
 	}
-	return state.options, append([]string(nil), state.mavenArgs...), err
+	return cli.Options{}, append([]string(nil), state.mavenArgs...), err
 }
 
 func userHomeDir() string {
@@ -198,20 +221,6 @@ func userHomeDir() string {
 
 func renderCommand(cmd *exec.Cmd) string {
 	return strings.Join(append([]string{cmd.Path}, cmd.Args[1:]...), " ")
-}
-
-func printVerboseResolution(cmd *cobra.Command, resolved config.ResolvedConfig) error {
-	_, err := fmt.Fprintf(
-		cmd.OutOrStdout(),
-		"%s\n%s %s [%s]\n%s %s [%s]\n%s %s [%s]\n%s %s [%s]\n%s %s\n",
-		styledHeader("jmvn resolution"),
-		styledLabel("JDK       "), resolved.JavaCmd, bracketSource(resolved.JavaCmdSource),
-		styledLabel("Maven     "), resolved.MavenHome, bracketSource(resolved.MavenHomeSource),
-		styledLabel("Settings  "), resolved.Settings, bracketSource(resolved.SettingsSource),
-		styledLabel("Local Repo"), resolved.LocalRepo, bracketSource(resolved.LocalRepoSource),
-		styledLabel("Project Dir"), resolved.ProjectDir,
-	)
-	return err
 }
 
 func bracketSource(source string) string {

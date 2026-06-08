@@ -2,38 +2,42 @@ package cmd
 
 import "testing"
 
-func TestRootCommand_ParsesOwnFlagsAndLeavesMavenArgs(t *testing.T) {
+func TestRootCommand_PassesMavenArgs(t *testing.T) {
 	cmd := NewRootCmd()
-	cmd.SetArgs([]string{"--jdk", "17", "--dry-run", "clean", "install"})
+	cmd.SetArgs([]string{"clean", "install"})
 
-	opts, mvnArgs, err := executeForTest(cmd)
+	_, mvnArgs, err := executeForTest(cmd)
 	if err != nil {
 		t.Fatalf("expected no error, got %v", err)
-	}
-	if opts.JDK != "17" {
-		t.Fatalf("expected JDK 17, got %q", opts.JDK)
-	}
-	if !opts.DryRun {
-		t.Fatalf("expected dry-run to be true")
 	}
 	if len(mvnArgs) != 2 || mvnArgs[0] != "clean" || mvnArgs[1] != "install" {
 		t.Fatalf("expected Maven args [clean install], got %#v", mvnArgs)
 	}
 }
 
-func TestRootCommand_PassesMavenDashDFlagAsArg(t *testing.T) {
+func TestRootCommand_PassesMavenArgsWithFlags(t *testing.T) {
 	cmd := NewRootCmd()
-	cmd.SetArgs([]string{"--jdk", "17", "clean", "install", "-DskipTests"})
+	cmd.SetArgs([]string{"-pl", "module", "-DskipTests"})
 
-	opts, mvnArgs, err := executeForTest(cmd)
+	_, mvnArgs, err := executeForTest(cmd)
 	if err != nil {
 		t.Fatalf("expected no error, got %v", err)
 	}
-	if opts.JDK != "17" {
-		t.Fatalf("expected JDK 17, got %q", opts.JDK)
+	if len(mvnArgs) != 3 || mvnArgs[0] != "-pl" || mvnArgs[1] != "module" || mvnArgs[2] != "-DskipTests" {
+		t.Fatalf("expected Maven args [-pl module -DskipTests], got %#v", mvnArgs)
 	}
-	if len(mvnArgs) != 3 || mvnArgs[2] != "-DskipTests" {
-		t.Fatalf("expected Maven args [clean install -DskipTests], got %#v", mvnArgs)
+}
+
+func TestRootCommand_DryRunPassesMavenArgs(t *testing.T) {
+	cmd := NewRootCmd()
+	cmd.SetArgs([]string{":dry-run", "clean", "install"})
+
+	_, mvnArgs, err := executeForTest(cmd)
+	if err != nil {
+		t.Fatalf("expected no error, got %v", err)
+	}
+	if len(mvnArgs) != 2 || mvnArgs[0] != "clean" || mvnArgs[1] != "install" {
+		t.Fatalf("expected Maven args [clean install], got %#v", mvnArgs)
 	}
 }
 

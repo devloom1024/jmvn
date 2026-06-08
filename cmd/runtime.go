@@ -1,7 +1,6 @@
 package cmd
 
 import (
-	"jmvn/internal/cli"
 	"jmvn/internal/config"
 	"path/filepath"
 )
@@ -15,7 +14,7 @@ type loadedCommandContext struct {
 	env         map[string]string
 }
 
-func loadCommandContext(state *executionState) (loadedCommandContext, error) {
+func loadCommandContext() (loadedCommandContext, error) {
 	cwd, err := deps.getwd()
 	if err != nil {
 		return loadedCommandContext{}, err
@@ -32,11 +31,9 @@ func loadCommandContext(state *executionState) (loadedCommandContext, error) {
 		return loadedCommandContext{}, err
 	}
 
-	opts := cli.Options{}
-	if state != nil {
-		opts = state.options
-	}
-	if projectCfg.JDK == "" && opts.JDK == "" {
+	env := deps.lookupEnv()
+
+	if projectCfg.JDK == "" && env["JMVN_JDK"] == "" {
 		projectCfg.JDK = deps.detectJDKVersion(cwd)
 	}
 
@@ -46,21 +43,17 @@ func loadCommandContext(state *executionState) (loadedCommandContext, error) {
 		projectPath: projectPath,
 		globalCfg:   globalCfg,
 		projectCfg:  projectCfg,
-		env:         deps.lookupEnv(),
+		env:         env,
 	}, nil
 }
 
-func resolveCommandConfig(state *executionState) (loadedCommandContext, config.ResolvedConfig, error) {
-	ctx, err := loadCommandContext(state)
+func resolveCommandConfig() (loadedCommandContext, config.ResolvedConfig, error) {
+	ctx, err := loadCommandContext()
 	if err != nil {
 		return loadedCommandContext{}, config.ResolvedConfig{}, err
 	}
 
-	opts := cli.Options{}
-	if state != nil {
-		opts = state.options
-	}
-	resolved, err := deps.resolve(opts, ctx.projectCfg, ctx.globalCfg, ctx.env, ctx.cwd)
+	resolved, err := deps.resolve(ctx.projectCfg, ctx.globalCfg, ctx.env, ctx.cwd)
 	if err != nil {
 		return loadedCommandContext{}, config.ResolvedConfig{}, err
 	}
