@@ -1,6 +1,6 @@
 # Changelog
 
-## [Unreleased]
+## [0.4.0](https://github.com/devloom1024/jmvn/compare/v0.3.0...v0.4.0) (2026-06-08)
 
 ### BREAKING CHANGES
 
