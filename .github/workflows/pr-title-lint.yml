@@ -1,0 +1,23 @@
+name: pr-title-lint
+
+on:
+  pull_request:
+    types: [opened, edited, synchronize, reopened]
+    branches: [main]
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check PR title format
+        env:
+          TITLE: ${{ github.event.pull_request.title }}
+        run: |
+          if echo "$TITLE" | grep -qE '^(feat!?|fix!?|docs|refactor|test|chore|style|perf|ci|build|revert)(\(.+\))?!?: '; then
+            echo "PR title format OK: $TITLE"
+          else
+            echo "::error::PR 标题格式不符合 conventional commit 规范：'$TITLE'"
+            echo "::error::正确格式示例：'feat: 添加新功能' / 'fix: 修复登录 bug' / 'refactor: 重构配置模块'"
+            echo "::error::详见 .github/PULL_REQUEST_TEMPLATE.md"
+            exit 1
+          fi
