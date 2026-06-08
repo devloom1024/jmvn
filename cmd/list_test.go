@@ -12,25 +12,24 @@ func TestListCommand_PrintsRegisteredToolchains(t *testing.T) {
 	original := deps
 	defer func() { deps = original }()
 
-	deps = commandDeps{
-		userHomeDir: func() string { return `D:/home` },
-		loadGlobal: func(string) (config.GlobalConfig, error) {
-			return config.GlobalConfig{
-				JDKs: map[string]string{
-					"17": `D:/jdks/jdk-17`,
-				},
-				Mavens: map[string]string{
-					"3.9": `D:/mavens/apache-maven-3.9.6`,
-				},
-			}, nil
-		},
+	deps = baseTestDeps()
+	deps.userHomeDir = func() string { return `D:/home` }
+	deps.loadGlobal = func(string) (config.GlobalConfig, error) {
+		return config.GlobalConfig{
+			JDKs: map[string]string{
+				"17": `D:/jdks/jdk-17`,
+			},
+			Mavens: map[string]string{
+				"3.9": `D:/mavens/apache-maven-3.9.6`,
+			},
+		}, nil
 	}
 
 	cmd := NewRootCmd()
 	var stdout bytes.Buffer
 	cmd.SetOut(&stdout)
 	cmd.SetErr(&stdout)
-	cmd.SetArgs([]string{"list"})
+	cmd.SetArgs([]string{":list"})
 
 	if err := cmd.Execute(); err != nil {
 		t.Fatalf("expected no error, got %v", err)

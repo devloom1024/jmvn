@@ -1,5 +1,15 @@
 # Changelog
 
+## [Unreleased]
+
+### BREAKING CHANGES
+
+* 重构 CLI 设计：以 `:` 前缀区分 jmvn 命令，其余参数全透传 Maven
+  * jmvn 命令：`:init`, `:info`, `:list`, `:version`, `:dry-run`, `:help`
+  * CLI flag（`--jdk`, `--dry-run` 等）替换为环境变量（`JMVN_JDK` 等）
+  * Maven 参数零冲突，`jmvn -pl module test` 开箱即用
+  * 移除 `jmvn run` 子命令（根命令即 run）
+
 ## [0.3.0](https://github.com/devloom1024/jmvn/compare/v0.2.1...v0.3.0) (2026-05-19)
 
 

@@ -12,29 +12,23 @@ import (
 	"github.com/spf13/cobra"
 )
 
-func newInitCmd() *cobra.Command {
-	var global bool
-	cmd := &cobra.Command{
-		Use:   "init",
-		Short: "Initialize jmvn configuration",
-		Long:  "Create a project-local .jmvn.toml or a global ~/.jmvn/config.toml file.\nUse --global to initialize the shared toolchain registry.",
-		Example: strings.Join([]string{
-			"  jmvn init",
-			"  jmvn init --global",
-		}, "\n"),
-		RunE: func(cmd *cobra.Command, args []string) error {
-			answers, err := deps.promptInit(global)
-			if err != nil {
-				return err
-			}
-			if global {
-				return writeGlobalConfig(answers)
-			}
-			return writeProjectConfig(answers)
-		},
+func handleInit(cmd *cobra.Command, args []string) error {
+	global := false
+	for _, arg := range args {
+		if arg == "--global" {
+			global = true
+			break
+		}
 	}
-	cmd.Flags().BoolVar(&global, "global", false, "Initialize global jmvn configuration")
-	return cmd
+
+	answers, err := deps.promptInit(global)
+	if err != nil {
+		return err
+	}
+	if global {
+		return writeGlobalConfig(answers)
+	}
+	return writeProjectConfig(answers)
 }
 
 func writeProjectConfig(answers promptAnswers) error {

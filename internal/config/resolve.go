@@ -4,15 +4,14 @@ import (
 	"fmt"
 	"path/filepath"
 
-	"jmvn/internal/cli"
 	"jmvn/internal/util"
 )
 
-func Resolve(cliOpts cli.Options, projectCfg ProjectConfig, globalCfg GlobalConfig, env map[string]string, projectDir string) (ResolvedConfig, error) {
+func Resolve(projectCfg ProjectConfig, globalCfg GlobalConfig, env map[string]string, projectDir string) (ResolvedConfig, error) {
 	resolved := ResolvedConfig{}
 
 	jdkVersion, jdkSource := firstNonEmpty(
-		cliOpts.JDK, "cli",
+		env["JMVN_JDK"], "env",
 		projectCfg.JDK, "project",
 		globalCfg.Defaults.JDK, "global",
 	)
@@ -29,7 +28,7 @@ func Resolve(cliOpts cli.Options, projectCfg ProjectConfig, globalCfg GlobalConf
 	}
 
 	mavenVersion, mavenVersionSource := firstNonEmpty(
-		cliOpts.Maven, "cli",
+		env["JMVN_MAVEN"], "env",
 		projectCfg.Maven, "project",
 	)
 	if mavenVersion != "" {
@@ -39,6 +38,9 @@ func Resolve(cliOpts cli.Options, projectCfg ProjectConfig, globalCfg GlobalConf
 		}
 		resolved.MavenHome = filepath.Clean(mavenHome)
 		resolved.MavenHomeSource = mavenVersionSource
+	} else if env["JMVN_MAVEN_HOME"] != "" {
+		resolved.MavenHome = filepath.Clean(env["JMVN_MAVEN_HOME"])
+		resolved.MavenHomeSource = "env"
 	} else if globalCfg.Defaults.MavenHome != "" {
 		resolved.MavenHome = filepath.Clean(globalCfg.Defaults.MavenHome)
 		resolved.MavenHomeSource = "global"
@@ -47,11 +49,19 @@ func Resolve(cliOpts cli.Options, projectCfg ProjectConfig, globalCfg GlobalConf
 		resolved.MavenHomeSource = "env"
 	}
 
-	if settings, source := firstNonEmpty(cliOpts.Settings, "cli", projectCfg.Settings, "project", globalCfg.Defaults.Settings, "global"); settings != "" {
+	if settings, source := firstNonEmpty(
+		env["JMVN_SETTINGS"], "env",
+		projectCfg.Settings, "project",
+		globalCfg.Defaults.Settings, "global",
+	); settings != "" {
 		resolved.Settings = util.ResolvePath(settings, projectDir)
 		resolved.SettingsSource = source
 	}
-	if repo, source := firstNonEmpty(cliOpts.LocalRepo, "cli", projectCfg.LocalRepo, "project", globalCfg.Defaults.LocalRepo, "global"); repo != "" {
+	if repo, source := firstNonEmpty(
+		env["JMVN_LOCAL_REPO"], "env",
+		projectCfg.LocalRepo, "project",
+		globalCfg.Defaults.LocalRepo, "global",
+	); repo != "" {
 		resolved.LocalRepo = util.ResolvePath(repo, projectDir)
 		resolved.LocalRepoSource = source
 	}

@@ -13,13 +13,11 @@ func TestInitCommand_ProjectRefusesToOverwriteExistingConfig(t *testing.T) {
 
 	original := deps
 	defer func() { deps = original }()
-	deps = commandDeps{
-		getwd:      func() (string, error) { return projectDir, nil },
-		promptInit: func(bool) (promptAnswers, error) { return promptAnswers{}, nil },
-	}
+	deps = baseTestDeps()
+	deps.getwd = func() (string, error) { return projectDir, nil }
 
 	cmd := NewRootCmd()
-	cmd.SetArgs([]string{"init"})
+	cmd.SetArgs([]string{":init"})
 	err := cmd.Execute()
 	if err == nil || !strings.Contains(err.Error(), "already exists") {
 		t.Fatalf("expected overwrite protection, got %v", err)
@@ -34,13 +32,11 @@ func TestInitCommand_GlobalRefusesToOverwriteExistingConfig(t *testing.T) {
 
 	original := deps
 	defer func() { deps = original }()
-	deps = commandDeps{
-		userHomeDir: func() string { return homeDir },
-		promptInit:  func(bool) (promptAnswers, error) { return promptAnswers{}, nil },
-	}
+	deps = baseTestDeps()
+	deps.userHomeDir = func() string { return homeDir }
 
 	cmd := NewRootCmd()
-	cmd.SetArgs([]string{"init", "--global"})
+	cmd.SetArgs([]string{":init", "--global"})
 	err := cmd.Execute()
 	if err == nil || !strings.Contains(err.Error(), "already exists") {
 		t.Fatalf("expected overwrite protection, got %v", err)
@@ -52,22 +48,21 @@ func TestInitCommand_GlobalWritesRegisteredDefaultJDK(t *testing.T) {
 	defer func() { deps = original }()
 
 	homeDir := t.TempDir()
-	deps = commandDeps{
-		userHomeDir: func() string { return homeDir },
-		promptInit: func(global bool) (promptAnswers, error) {
-			return promptAnswers{
-				JDK:       "17",
-				JDKHome:   `D:/jdks/jdk-17`,
-				Maven:     "3.9",
-				MavenHome: `D:/mavens/apache-maven-3.9.6`,
-				Settings:  `D:/users/demo/.m2/settings.xml`,
-				LocalRepo: `D:/users/demo/.m2/repository`,
-			}, nil
-		},
+	deps = baseTestDeps()
+	deps.userHomeDir = func() string { return homeDir }
+	deps.promptInit = func(global bool) (promptAnswers, error) {
+		return promptAnswers{
+			JDK:       "17",
+			JDKHome:   `D:/jdks/jdk-17`,
+			Maven:     "3.9",
+			MavenHome: `D:/mavens/apache-maven-3.9.6`,
+			Settings:  `D:/users/demo/.m2/settings.xml`,
+			LocalRepo: `D:/users/demo/.m2/repository`,
+		}, nil
 	}
 
 	cmd := NewRootCmd()
-	cmd.SetArgs([]string{"init", "--global"})
+	cmd.SetArgs([]string{":init", "--global"})
 	_ = cmd.Execute()
 
 	content, _ := os.ReadFile(filepath.Join(homeDir, ".jmvn", "config.toml"))
@@ -85,19 +80,18 @@ func TestInitCommand_WritesProjectConfigTemplate(t *testing.T) {
 	defer func() { deps = original }()
 
 	projectDir := t.TempDir()
-	deps = commandDeps{
-		getwd: func() (string, error) { return projectDir, nil },
-		promptInit: func(global bool) (promptAnswers, error) {
-			return promptAnswers{
-				JDK:      "17",
-				Maven:    "3.9",
-				Settings: "./maven/settings.xml",
-			}, nil
-		},
+	deps = baseTestDeps()
+	deps.getwd = func() (string, error) { return projectDir, nil }
+	deps.promptInit = func(global bool) (promptAnswers, error) {
+		return promptAnswers{
+			JDK:      "17",
+			Maven:    "3.9",
+			Settings: "./maven/settings.xml",
+		}, nil
 	}
 
 	cmd := NewRootCmd()
-	cmd.SetArgs([]string{"init"})
+	cmd.SetArgs([]string{":init"})
 	if err := cmd.Execute(); err != nil {
 		t.Fatalf("expected no error, got %v", err)
 	}
@@ -123,23 +117,22 @@ func TestInitCommand_GlobalWritesConfigToml(t *testing.T) {
 	defer func() { deps = original }()
 
 	homeDir := t.TempDir()
-	deps = commandDeps{
-		userHomeDir: func() string { return homeDir },
-		promptInit: func(global bool) (promptAnswers, error) {
-			if !global {
-				t.Fatal("expected global init")
-			}
-			return promptAnswers{
-				JDK:       "17",
-				MavenHome: `D:/mavens/apache-maven-3.9.6`,
-				Settings:  `D:/users/demo/.m2/settings.xml`,
-				LocalRepo: `D:/users/demo/.m2/repository`,
-			}, nil
-		},
+	deps = baseTestDeps()
+	deps.userHomeDir = func() string { return homeDir }
+	deps.promptInit = func(global bool) (promptAnswers, error) {
+		if !global {
+			t.Fatal("expected global init")
+		}
+		return promptAnswers{
+			JDK:       "17",
+			MavenHome: `D:/mavens/apache-maven-3.9.6`,
+			Settings:  `D:/users/demo/.m2/settings.xml`,
+			LocalRepo: `D:/users/demo/.m2/repository`,
+		}, nil
 	}
 
 	cmd := NewRootCmd()
-	cmd.SetArgs([]string{"init", "--global"})
+	cmd.SetArgs([]string{":init", "--global"})
 	if err := cmd.Execute(); err != nil {
 		t.Fatalf("expected no error, got %v", err)
 	}

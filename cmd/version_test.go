@@ -16,7 +16,7 @@ func TestVersionCommand_PrintsBuildVersion(t *testing.T) {
 	var stdout bytes.Buffer
 	cmd.SetOut(&stdout)
 	cmd.SetErr(&stdout)
-	cmd.SetArgs([]string{"version"})
+	cmd.SetArgs([]string{":version"})
 
 	if err := cmd.Execute(); err != nil {
 		t.Fatalf("expected no error, got %v", err)

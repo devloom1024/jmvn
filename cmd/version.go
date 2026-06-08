@@ -15,13 +15,7 @@ func SetBuildVersion(version string) {
 	}
 }
 
-func newVersionCmd() *cobra.Command {
-	return &cobra.Command{
-		Use:   "version",
-		Short: "Print jmvn version information",
-		RunE: func(cmd *cobra.Command, args []string) error {
-			_, err := fmt.Fprintf(cmd.OutOrStdout(), "jmvn v%s (%s, %s/%s)\n", buildVersion, runtime.Version(), runtime.GOOS, runtime.GOARCH)
-			return err
-		},
-	}
+func handleVersion(cmd *cobra.Command) error {
+	_, err := fmt.Fprintf(cmd.OutOrStdout(), "jmvn v%s (%s, %s/%s)\n", buildVersion, runtime.Version(), runtime.GOOS, runtime.GOARCH)
+	return err
 }
